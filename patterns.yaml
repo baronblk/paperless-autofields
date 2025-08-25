@@ -1,0 +1,61 @@
+# Regex patterns for document field extraction
+# Patterns können zur Laufzeit über die Web-GUI bearbeitet werden
+
+# Rechnungsnummer-Extraktion
+rechnungsnummer:
+  pattern: '(?i)(?:rechnung(?:s)?(?:nummer|nr\.?)?|invoice(?:\s+)?(?:number|no\.?)?|rg\.?\s?nr\.?)[:\s]*([A-Z0-9][A-Z0-9\-._/]*[A-Z0-9]|[A-Z0-9])'
+  description: "Erkennt Rechnungsnummern in verschiedenen Formaten"
+  validation: "^[A-Z0-9][A-Z0-9\\-._/]*[A-Z0-9]|[A-Z0-9]$"
+  examples:
+  - "Rechnungsnummer: RG-2024-001"
+  - "Invoice No. INV123456"
+  - "RG.Nr. 2024/0815"
+
+# Zahlungsziel/Fälligkeitsdatum
+zahlungsziel:
+  pattern: '(?i)(?:zahlbar\s+bis|fällig\s+am|zahlungsziel|due\s+date|payment\s+due)[:\s]*(\d{1,2}\.?\d{1,2}\.?\d{2,4}|\d{2,4}-\d{1,2}-\d{1,2})'
+  description: "Erkennt Zahlungstermine und Fälligkeitsdaten"
+  validation: "^\\d{1,2}\\.\\d{1,2}\\.\\d{2,4}|\\d{2,4}-\\d{1,2}-\\d{1,2}$"
+  examples:
+  - "Zahlbar bis: 31.12.2024"
+  - "Fällig am 15.11.2024"
+  - "Due Date: 2024-12-31"
+
+# Rechnungsbetrag
+betrag:
+  pattern: '(?i)(?:(?:rechnungs)?(?:betrag|summe)|(?:total|gesamt)(?:betrag|summe)?|amount)[:\s]*(?:EUR|€)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})'
+  description: "Erkennt Rechnungsbeträge"
+  validation: "^\\d{1,3}(?:[.,]\\d{3})*[.,]\\d{2}$"
+  examples:
+  - "Rechnungsbetrag: €1.234,56"
+  - "Gesamtsumme 999,99"
+  - "Total Amount: 1,500.00"
+
+# IBAN
+iban:
+  pattern: '(?i)(?:iban)[:\s]*([A-Z]{2}\d{2}[A-Z0-9]{4}\d{7}[A-Z0-9]{1,23})'
+  description: "Erkennt IBAN-Nummern"
+  validation: "^[A-Z]{2}\\d{2}[A-Z0-9]{4}\\d{7}[A-Z0-9]{1,23}$"
+  examples:
+  - "IBAN: DE89370400440532013000"
+  - "IBAN DE02120300000000202051"
+
+# Kundennummer
+kundennummer:
+  pattern: '(?i)(?:kunden(?:nummer|nr\.?)|customer(?:\s+)?(?:number|no\.?|id))[:\s]*([A-Z0-9][A-Z0-9\-._]*[A-Z0-9]|[A-Z0-9])'
+  description: "Erkennt Kundennummern"
+  validation: "^[A-Z0-9][A-Z0-9\\-._]*[A-Z0-9]|[A-Z0-9]$"
+  examples:
+  - "Kundennummer: K12345"
+  - "Customer ID: CUST-001"
+  - "Kd.Nr. 987654"
+
+# Kassenzeichen / Aktenzeichen
+kassenzeichen:
+  pattern: '(?i)(?:kassen(?:zeichen|nr\.?)|akten(?:zeichen|nr\.?)|ref(?:erence)?(?:\s+)?(?:number|no\.?)?)[:\s]*([A-Z0-9][A-Z0-9\-._/]*[A-Z0-9]|[A-Z0-9])'
+  description: "Erkennt Kassenzeichen und Aktenzeichen"
+  validation: "^[A-Z0-9][A-Z0-9\\-._/]*[A-Z0-9]|[A-Z0-9]$"
+  examples:
+  - "Kassenzeichen: KZ-2024-0815"
+  - "Aktenzeichen AZ/123/2024"
+  - "Reference No.: REF123456"

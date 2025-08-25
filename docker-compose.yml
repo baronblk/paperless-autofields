@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  paperless-autofields:
+    build: .
+    container_name: paperless-autofields
+    restart: unless-stopped
+    environment:
+      # Paperless-NGX API Configuration
+      - PAPERLESS_API_URL=${PAPERLESS_API_URL}
+      - PAPERLESS_API_TOKEN=${PAPERLESS_API_TOKEN}
+      
+      # Document Processing
+      - DOCUMENT_TYPE=${DOCUMENT_TYPE:-Rechnung}
+      - RUN_INTERVAL=${RUN_INTERVAL:-300}
+      
+      # Web UI (optional)
+      - WEB_PORT=${WEB_PORT:-5000}
+      - WEB_HOST=${WEB_HOST:-0.0.0.0}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=${LOG_FILE:-logs/paperless-autofields.log}
+      
+      # Processing Options
+      - VALIDATE_EXTRACTED_VALUES=${VALIDATE_EXTRACTED_VALUES:-true}
+      - SKIP_PROCESSED_DOCUMENTS=${SKIP_PROCESSED_DOCUMENTS:-true}
+    
+    volumes:
+      # Pattern-Datei für Live-Editing
+      - ./patterns.yaml:/app/patterns.yaml
+      
+      # Logs persistent speichern
+      - ./logs:/app/logs
+      
+      # Optional: .env-Datei mounten
+      - ./.env:/app/.env:ro
+    
+    ports:
+      # Web-GUI Port (optional, nur wenn Web-Interface genutzt wird)
+      - "${WEB_PORT:-5000}:${WEB_PORT:-5000}"
+    
+    networks:
+      - paperless
+    
+    depends_on:
+      - paperless-ngx
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${WEB_PORT:-5000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Web-GUI als separater Service (optional)
+  paperless-autofields-web:
+    build:
+      context: .
+      target: web
+    container_name: paperless-autofields-web
+    restart: unless-stopped
+    environment:
+      - PAPERLESS_API_URL=${PAPERLESS_API_URL}
+      - PAPERLESS_API_TOKEN=${PAPERLESS_API_TOKEN}
+      - WEB_PORT=${WEB_PORT:-5000}
+      - WEB_HOST=${WEB_HOST:-0.0.0.0}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    volumes:
+      - ./patterns.yaml:/app/patterns.yaml
+      - ./logs:/app/logs
+      - ./.env:/app/.env:ro
+    
+    ports:
+      - "${WEB_PORT:-5000}:${WEB_PORT:-5000}"
+    
+    networks:
+      - paperless
+    
+    depends_on:
+      - paperless-autofields
+    
+    profiles:
+      - web  # Nur starten wenn explizit angegeben
+
+  # Beispiel: Paperless-NGX Service (falls nicht bereits vorhanden)
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless-ngx
+    restart: unless-stopped
+    environment:
+      PAPERLESS_REDIS: redis://redis:6379
+      PAPERLESS_DBHOST: db
+      PAPERLESS_DBNAME: paperless
+      PAPERLESS_DBUSER: paperless
+      PAPERLESS_DBPASS: paperless
+      PAPERLESS_SECRET_KEY: change-me-in-production
+      PAPERLESS_URL: http://localhost:8000
+      PAPERLESS_ADMIN_USER: admin
+      PAPERLESS_ADMIN_PASSWORD: admin
+    volumes:
+      - paperless_data:/usr/src/paperless/data
+      - paperless_media:/usr/src/paperless/media
+      - ./consume:/usr/src/paperless/consume
+      - ./export:/usr/src/paperless/export
+    ports:
+      - "8000:8000"
+    networks:
+      - paperless
+    depends_on:
+      - db
+      - redis
+    profiles:
+      - paperless  # Nur starten wenn explizit angegeben
+
+  # Beispiel: PostgreSQL für Paperless-NGX
+  db:
+    image: postgres:15
+    container_name: paperless-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: paperless
+      POSTGRES_USER: paperless
+      POSTGRES_PASSWORD: paperless
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - paperless
+    profiles:
+      - paperless
+
+  # Beispiel: Redis für Paperless-NGX
+  redis:
+    image: redis:7
+    container_name: paperless-redis
+    restart: unless-stopped
+    networks:
+      - paperless
+    profiles:
+      - paperless
+
+networks:
+  paperless:
+    external: true
+    # Falls das Netzwerk nicht existiert:
+    # driver: bridge
+
+volumes:
+  paperless_data:
+  paperless_media:
+  pgdata:

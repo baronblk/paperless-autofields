@@ -1,0 +1,25 @@
+# Core dependencies
+requests==2.31.0
+pyyaml==6.0.1
+python-dotenv==1.0.0
+schedule==1.2.0
+
+# Web UI
+flask==2.3.3
+werkzeug==2.3.7
+
+# Logging
+loguru==0.7.2
+
+# File watching
+watchdog==3.0.0
+
+# OCR (optional, kann auch externe OCR nutzen)
+# pytesseract==0.3.10
+
+# Development dependencies (nur für lokale Entwicklung)
+# pytest==7.4.2
+# pytest-cov==4.1.0
+# black==23.9.1
+# flake8==6.1.0
+# pre-commit==3.5.0
