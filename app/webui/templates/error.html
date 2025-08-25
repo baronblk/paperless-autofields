@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Fehler - Paperless AutoFields{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Fehler aufgetreten</h1>
+    <div class="alert alert-error">
+        <h3>Entschuldigung, ein Fehler ist aufgetreten:</h3>
+        <p><strong>{{ error }}</strong></p>
+    </div>
+    
+    <div class="error-actions">
+        <a href="/" class="btn">Zum Dashboard</a>
+        <button class="btn btn-secondary" onclick="window.history.back()">Zurück</button>
+        <a href="/health" class="btn btn-secondary">System-Status prüfen</a>
+    </div>
+    
+    <div class="error-help">
+        <h3>Mögliche Lösungen:</h3>
+        <ul>
+            <li>Überprüfen Sie die <a href="/config">Konfiguration</a></li>
+            <li>Prüfen Sie die <a href="/logs">System-Logs</a></li>
+            <li>Stellen Sie sicher, dass Paperless-NGX erreichbar ist</li>
+            <li>Überprüfen Sie den API-Token</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .error-actions {
+        margin: 2rem 0;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .error-help {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #e2e8f0;
+    }
+    
+    .error-help ul {
+        margin-left: 1.5rem;
+    }
+    
+    .error-help li {
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .error-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}

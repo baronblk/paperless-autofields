@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+
+{% block title %}Patterns - Paperless AutoFields{% endblock %}
+
+{% block content %}
+<h1>Pattern-Verwaltung</h1>
+
+<div class="card">
+    <h2>Verfügbare Patterns</h2>
+    <p>Hier können Sie die Regex-Patterns für die Felderkennung verwalten und testen.</p>
+    
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Feldname</th>
+                    <th>Beschreibung</th>
+                    <th>Pattern</th>
+                    <th>Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, info in patterns.items() %}
+                <tr>
+                    <td><strong>{{ name }}</strong></td>
+                    <td>{{ info.description or 'Keine Beschreibung' }}</td>
+                    <td><code>{{ info.pattern[:50] }}{% if info.pattern|length > 50 %}...{% endif %}</code></td>
+                    <td>
+                        <button class="btn btn-secondary" onclick="editPattern('{{ name }}')">Bearbeiten</button>
+                        <button class="btn" onclick="testPatternModal('{{ name }}')">Testen</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="pattern-actions">
+        <button class="btn" onclick="addNewPattern()">Neues Pattern hinzufügen</button>
+        <button class="btn btn-secondary" onclick="reloadPatterns()">Patterns neu laden</button>
+        <button class="btn btn-secondary" onclick="exportPatterns()">Patterns exportieren</button>
+    </div>
+</div>
+
+<!-- Pattern Editor Modal -->
+<div id="pattern-editor-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modal-title">Pattern bearbeiten</h3>
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="pattern-form" onsubmit="return savePattern(event)">
+                <div class="form-group">
+                    <label for="pattern-name">Feldname</label>
+                    <input type="text" id="pattern-name" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="pattern-description">Beschreibung</label>
+                    <input type="text" id="pattern-description" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label for="pattern-regex">Regex Pattern</label>
+                    <textarea id="pattern-regex" class="form-control" rows="3" required></textarea>
+                    <small class="form-text">Verwenden Sie Capturing Groups () für den zu extrahierenden Wert</small>
+                </div>
+                <div class="form-group">
+                    <label for="pattern-validation">Validierungs-Pattern (optional)</label>
+                    <input type="text" id="pattern-validation" class="form-control">
+                    <small class="form-text">Regex zur Validierung des extrahierten Wertes</small>
+                </div>
+                <div class="form-group">
+                    <label for="pattern-examples">Beispiele (optional)</label>
+                    <textarea id="pattern-examples" class="form-control" rows="3" 
+                              placeholder="Ein Beispiel pro Zeile"></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn">Speichern</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Test Pattern Modal -->
+<div id="test-pattern-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Pattern testen</h3>
+            <span class="modal-close" onclick="closeTestModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="test-field-name">Feld</label>
+                <input type="text" id="test-field-name" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label for="test-text-input">Test-Text</label>
+                <textarea id="test-text-input" class="form-control" rows="5" 
+                          placeholder="Hier den zu testenden Text eingeben..."></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="runPatternTest()">Testen</button>
+                <button class="btn btn-secondary" onclick="closeTestModal()">Schließen</button>
+            </div>
+            <div id="test-result" class="test-result"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pattern-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .modal {
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .modal-content {
+        background: white;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    
+    .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modal-header h3 {
+        margin: 0;
+        color: #667eea;
+    }
+    
+    .modal-close {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #666;
+    }
+    
+    .modal-close:hover {
+        color: #000;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+    }
+    
+    .form-text {
+        font-size: 0.8rem;
+        color: #666;
+        margin-top: 0.25rem;
+        display: block;
+    }
+    
+    .test-result {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 5px;
+        border: 1px solid #e2e8f0;
+        background: #f7fafc;
+        display: none;
+    }
+    
+    .test-result.success {
+        background: #f0fff4;
+        border-color: #c6f6d5;
+        color: #22543d;
+    }
+    
+    .test-result.error {
+        background: #fed7d7;
+        border-color: #feb2b2;
+        color: #742a2a;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    @media (max-width: 768px) {
+        .pattern-actions {
+            flex-direction: column;
+        }
+        
+        .modal-content {
+            width: 95%;
+            margin: 1rem;
+        }
+        
+        .modal-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentEditingPattern = null;
+    
+    function editPattern(patternName) {
+        fetch('/api/patterns')
+            .then(response => response.json())
+            .then(patterns => {
+                const pattern = patterns[patternName];
+                if (pattern) {
+                    currentEditingPattern = patternName;
+                    document.getElementById('modal-title').textContent = 
+                        patternName ? 'Pattern bearbeiten' : 'Neues Pattern';
+                    document.getElementById('pattern-name').value = patternName;
+                    document.getElementById('pattern-name').readOnly = !!patternName;
+                    document.getElementById('pattern-description').value = pattern.description || '';
+                    document.getElementById('pattern-regex').value = pattern.pattern || '';
+                    document.getElementById('pattern-validation').value = pattern.validation || '';
+                    
+                    // Beispiele verarbeiten
+                    let examples = '';
+                    if (pattern.examples && Array.isArray(pattern.examples)) {
+                        examples = pattern.examples.join('\n');
+                    }
+                    document.getElementById('pattern-examples').value = examples;
+                    
+                    document.getElementById('pattern-editor-modal').style.display = 'flex';
+                }
+            })
+            .catch(error => {
+                alert('Fehler beim Laden des Patterns: ' + error.message);
+            });
+    }
+    
+    function addNewPattern() {
+        currentEditingPattern = null;
+        document.getElementById('modal-title').textContent = 'Neues Pattern hinzufügen';
+        document.getElementById('pattern-name').value = '';
+        document.getElementById('pattern-name').readOnly = false;
+        document.getElementById('pattern-description').value = '';
+        document.getElementById('pattern-regex').value = '';
+        document.getElementById('pattern-validation').value = '';
+        document.getElementById('pattern-examples').value = '';
+        document.getElementById('pattern-editor-modal').style.display = 'flex';
+    }
+    
+    function closeModal() {
+        document.getElementById('pattern-editor-modal').style.display = 'none';
+    }
+    
+    function savePattern(event) {
+        event.preventDefault();
+        
+        const name = document.getElementById('pattern-name').value;
+        const description = document.getElementById('pattern-description').value;
+        const pattern = document.getElementById('pattern-regex').value;
+        const validation = document.getElementById('pattern-validation').value;
+        const examplesText = document.getElementById('pattern-examples').value;
+        
+        // Beispiele verarbeiten
+        const examples = examplesText.trim() ? 
+                        examplesText.split('\n').filter(line => line.trim()) : [];
+        
+        const patternData = {
+            pattern: pattern,
+            description: description
+        };
+        
+        if (validation) {
+            patternData.validation = validation;
+        }
+        
+        if (examples.length > 0) {
+            patternData.examples = examples;
+        }
+        
+        fetch(`/api/patterns/${name}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(patternData)
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Pattern erfolgreich gespeichert!');
+                closeModal();
+                location.reload(); // Seite neu laden
+            } else {
+                alert('Fehler beim Speichern: ' + result.error);
+            }
+        })
+        .catch(error => {
+            alert('Fehler beim Speichern: ' + error.message);
+        });
+        
+        return false;
+    }
+    
+    function testPatternModal(patternName) {
+        document.getElementById('test-field-name').value = patternName;
+        document.getElementById('test-text-input').value = '';
+        document.getElementById('test-result').style.display = 'none';
+        document.getElementById('test-pattern-modal').style.display = 'flex';
+    }
+    
+    function closeTestModal() {
+        document.getElementById('test-pattern-modal').style.display = 'none';
+    }
+    
+    function runPatternTest() {
+        const fieldName = document.getElementById('test-field-name').value;
+        const testText = document.getElementById('test-text-input').value;
+        const resultDiv = document.getElementById('test-result');
+        
+        if (!testText.trim()) {
+            alert('Bitte Test-Text eingeben');
+            return;
+        }
+        
+        fetch('/api/test-pattern', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                field_name: fieldName,
+                test_text: testText
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            resultDiv.style.display = 'block';
+            
+            if (result.found) {
+                resultDiv.className = 'test-result success';
+                resultDiv.innerHTML = `<strong>✓ Match gefunden:</strong><br><code>${result.result}</code>`;
+            } else {
+                resultDiv.className = 'test-result error';
+                resultDiv.innerHTML = '<strong>✗ Kein Match gefunden</strong>';
+            }
+        })
+        .catch(error => {
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'test-result error';
+            resultDiv.innerHTML = `<strong>Fehler:</strong> ${error.message}`;
+        });
+    }
+    
+    function reloadPatterns() {
+        if (confirm('Patterns aus der Datei neu laden? Ungespeicherte Änderungen gehen verloren.')) {
+            // Hier würde eine API-Route zum Neuladen aufgerufen
+            location.reload();
+        }
+    }
+    
+    function exportPatterns() {
+        fetch('/api/patterns')
+            .then(response => response.json())
+            .then(patterns => {
+                const dataStr = "data:text/json;charset=utf-8," + 
+                               encodeURIComponent(JSON.stringify(patterns, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "patterns.json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            })
+            .catch(error => {
+                alert('Fehler beim Exportieren: ' + error.message);
+            });
+    }
+    
+    // Event Listener für Modal-Schließung bei Klick außerhalb
+    window.onclick = function(event) {
+        const editorModal = document.getElementById('pattern-editor-modal');
+        const testModal = document.getElementById('test-pattern-modal');
+        
+        if (event.target === editorModal) {
+            closeModal();
+        } else if (event.target === testModal) {
+            closeTestModal();
+        }
+    }
+    
+    // ESC-Taste zum Schließen
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+            closeTestModal();
+        }
+    });
+</script>
+{% endblock %}
