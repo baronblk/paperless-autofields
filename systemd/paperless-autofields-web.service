@@ -1,0 +1,35 @@
+[Unit]
+Description=Paperless AutoFields Web GUI
+Documentation=https://github.com/baronblk/paperless-autofields
+After=network.target paperless-autofields.service
+Wants=network.target
+
+[Service]
+Type=simple
+User=paperless
+Group=paperless
+WorkingDirectory=/opt/paperless-autofields
+Environment=PATH=/opt/paperless-autofields/venv/bin
+EnvironmentFile=/opt/paperless-autofields/.env
+ExecStart=/opt/paperless-autofields/venv/bin/python app/webui/gui.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=paperless-autofields-web
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/paperless-autofields/logs
+ReadWritePaths=/opt/paperless-autofields/patterns.yaml
+
+# Resource limits
+MemoryMax=256M
+CPUQuota=25%
+
+[Install]
+WantedBy=multi-user.target

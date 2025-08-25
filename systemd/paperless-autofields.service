@@ -1,0 +1,35 @@
+[Unit]
+Description=Paperless AutoFields - Automatische Felderkennung
+Documentation=https://github.com/baronblk/paperless-autofields
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=paperless
+Group=paperless
+WorkingDirectory=/opt/paperless-autofields
+Environment=PATH=/opt/paperless-autofields/venv/bin
+EnvironmentFile=/opt/paperless-autofields/.env
+ExecStart=/opt/paperless-autofields/venv/bin/python app/autofill.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=paperless-autofields
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/paperless-autofields/logs
+ReadWritePaths=/opt/paperless-autofields/patterns.yaml
+
+# Resource limits
+MemoryMax=512M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

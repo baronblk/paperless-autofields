@@ -23,7 +23,8 @@ class PaperlessAPI:
         self.api_url = api_url.rstrip('/')
         self.headers = {
             'Authorization': f'Token {api_token}',
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json; version=6'  # API-Versionierung
         }
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -151,6 +152,7 @@ class PaperlessAPI:
                               value: str) -> bool:
         """
         Setzt den Wert eines Custom Fields für ein Dokument.
+        Nutzt die neue /api/custom_field_values/ API.
         
         Args:
             document_id: ID des Dokuments
@@ -171,32 +173,32 @@ class PaperlessAPI:
         try:
             # Prüfen ob bereits ein Wert gesetzt ist
             response = self.session.get(
-                f'{self.api_url}/api/custom_field_instances/',
+                f'{self.api_url}/api/custom_field_values/',
                 params={
                     'document': document_id,
-                    'field': field_id
+                    'custom_field': field_id
                 }
             )
             response.raise_for_status()
             instances = response.json().get('results', [])
             
             if instances:
-                # Wert aktualisieren
-                instance_id = instances[0]['id']
-                response = self.session.patch(
-                    f'{self.api_url}/api/custom_field_instances/{instance_id}/',
-                    json={'value': value}
-                )
-            else:
-                # Neuen Wert erstellen
-                response = self.session.post(
-                    f'{self.api_url}/api/custom_field_instances/',
-                    json={
-                        'document': document_id,
-                        'field': field_id,
-                        'value': value
-                    }
-                )
+                # Bestehenden Wert löschen (API unterstützt kein Update)
+                for instance in instances:
+                    delete_response = self.session.delete(
+                        f'{self.api_url}/api/custom_field_values/{instance["id"]}/'
+                    )
+                    delete_response.raise_for_status()
+            
+            # Neuen Wert erstellen
+            response = self.session.post(
+                f'{self.api_url}/api/custom_field_values/',
+                json={
+                    'document': document_id,
+                    'custom_field': field_id,
+                    'value': value
+                }
+            )
             
             response.raise_for_status()
             logger.success(f"Custom Field '{field_name}' für Dokument "
@@ -210,6 +212,7 @@ class PaperlessAPI:
     def get_document_custom_fields(self, document_id: int) -> Dict[str, str]:
         """
         Ruft alle Custom Field-Werte eines Dokuments ab.
+        Nutzt die neue /api/custom_field_values/ API.
         
         Args:
             document_id: ID des Dokuments
@@ -219,7 +222,7 @@ class PaperlessAPI:
         """
         try:
             response = self.session.get(
-                f'{self.api_url}/api/custom_field_instances/',
+                f'{self.api_url}/api/custom_field_values/',
                 params={'document': document_id}
             )
             response.raise_for_status()
@@ -230,7 +233,7 @@ class PaperlessAPI:
             
             result = {}
             for instance in instances:
-                field_id = instance['field']
+                field_id = instance['custom_field']
                 field_name = fields.get(field_id, f'Unknown_{field_id}')
                 result[field_name] = instance['value']
             
@@ -240,3 +243,59 @@ class PaperlessAPI:
             logger.error(f"Fehler beim Abrufen der Custom Fields "
                         f"für Dokument {document_id}: {e}")
             return {}
+    
+    def search_documents(self, query: str, document_type: str = None,
+                        limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Durchsucht Dokumente mit Volltext-Suche.
+        
+        Args:
+            query: Suchquery
+            document_type: Optional: Filter nach Dokumenttyp
+            limit: Maximale Anzahl Ergebnisse
+            
+        Returns:
+            Liste der gefundenen Dokumente
+        """
+        try:
+            params = {
+                'query': query,
+                'page_size': limit
+            }
+            
+            if document_type:
+                params['document_type__name'] = document_type
+            
+            response = self.session.get(
+                f'{self.api_url}/api/documents/',
+                params=params
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            return data.get('results', [])
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Fehler bei Dokumentsuche: {e}")
+            return []
+    
+    def get_api_info(self) -> Dict[str, Any]:
+        """
+        Ruft API-Informationen ab (Version, etc.).
+        
+        Returns:
+            API-Informationen als Dictionary
+        """
+        try:
+            response = self.session.get(f'{self.api_url}/api/')
+            response.raise_for_status()
+            
+            return {
+                'api_version': response.headers.get('X-Api-Version', 'unknown'),
+                'server_version': response.headers.get('X-Version', 'unknown'),
+                'status': 'connected'
+            }
+            
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Fehler beim Abrufen der API-Info: {e}")
+            return {'status': 'error', 'error': str(e)}
