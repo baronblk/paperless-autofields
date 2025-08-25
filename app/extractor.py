@@ -1,13 +1,14 @@
 """
 Paperless AutoFields - OCR/Regex Extraction Logic
 
-Dieses Modul extrahiert Felder aus OCR-Text mittels konfigurierbarer Regex-Patterns.
+Dieses Modul extrahiert Felder aus OCR-Text mittels konfigurierbarer
+Regex-Patterns.
 """
 
 import re
 import yaml
 from pathlib import Path
-from typing import Dict, Optional, Any, List
+from typing import Dict, Optional, Any
 from loguru import logger
 
 
@@ -30,15 +31,16 @@ class FieldExtractor:
         try:
             if not Path(self.pattern_file).exists():
                 logger.warning(f"Pattern-Datei {self.pattern_file} nicht "
-                              f"gefunden, verwende Standard-Patterns")
+                               f"gefunden, verwende Standard-Patterns")
                 self.patterns = self._get_default_patterns()
                 return
             
             with open(self.pattern_file, 'r', encoding='utf-8') as f:
                 self.patterns = yaml.safe_load(f) or {}
             
-            logger.success(f"Patterns geladen: {len(self.patterns)} "
-                          f"Felder verfügbar")
+            pattern_count = len(self.patterns)
+            logger.success(f"Patterns geladen: {pattern_count} Felder "
+                           f"verfügbar")
             
         except Exception as e:
             logger.error(f"Fehler beim Laden der Patterns: {e}")
@@ -48,21 +50,28 @@ class FieldExtractor:
         """Gibt Standard-Patterns zurück falls Datei nicht verfügbar."""
         return {
             'rechnungsnummer': {
-                'pattern': r'(?i)(?:rechnung(?:s)?(?:nummer|nr\.?)?|'
-                          r'invoice(?:\s+)?(?:number|no\.?)?|rg\.?\s?nr\.?)'
-                          r'[:\s]*([A-Z0-9][A-Z0-9\-._/]*[A-Z0-9]|[A-Z0-9])',
+                'pattern': (
+                    r'(?i)(?:rechnung(?:s)?(?:nummer|nr\.?)?|'
+                    r'invoice(?:\s+)?(?:number|no\.?)?|rg\.?\s?nr\.?)'
+                    r'[:\s]*([A-Z0-9][A-Z0-9\-._/]*[A-Z0-9]|[A-Z0-9])'
+                ),
                 'description': 'Erkennt Rechnungsnummern'
             },
             'zahlungsziel': {
-                'pattern': r'(?i)(?:zahlbar\s+bis|fällig\s+am|zahlungsziel|'
-                          r'due\s+date|payment\s+due)[:\s]*'
-                          r'(\d{1,2}\.?\d{1,2}\.?\d{2,4}|\d{2,4}-\d{1,2}-\d{1,2})',
+                'pattern': (
+                    r'(?i)(?:zahlbar\s+bis|fällig\s+am|zahlungsziel|'
+                    r'due\s+date|payment\s+due)[:\s]*'
+                    r'(\d{1,2}\.?\d{1,2}\.?\d{2,4}|'
+                    r'\d{2,4}-\d{1,2}-\d{1,2})'
+                ),
                 'description': 'Erkennt Zahlungstermine'
             },
             'betrag': {
-                'pattern': r'(?i)(?:(?:rechnungs)?(?:betrag|summe)|'
-                          r'(?:total|gesamt)(?:betrag|summe)?|amount)[:\s]*'
-                          r'(?:EUR|€)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})',
+                'pattern': (
+                    r'(?i)(?:(?:rechnungs)?(?:betrag|summe)|'
+                    r'(?:total|gesamt)(?:betrag|summe)?|amount)[:\s]*'
+                    r'(?:EUR|€)?\s*(\d{1,3}(?:[.,]\d{3})*[.,]\d{2})'
+                ),
                 'description': 'Erkennt Rechnungsbeträge'
             }
         }
@@ -104,7 +113,7 @@ class FieldExtractor:
             return None
         except Exception as e:
             logger.error(f"Unerwarteter Fehler bei Extraktion "
-                        f"von '{field_name}': {e}")
+                         f"von '{field_name}': {e}")
             return None
     
     def extract_all_fields(self, text: str) -> Dict[str, str]:
@@ -125,7 +134,7 @@ class FieldExtractor:
                 results[field_name] = value
         
         logger.info(f"Extraktion abgeschlossen: {len(results)} "
-                   f"Felder gefunden")
+                    f"Felder gefunden")
         return results
     
     def validate_value(self, field_name: str, value: str) -> bool:

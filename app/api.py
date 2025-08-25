@@ -1,5 +1,8 @@
 """
-Paperless AutoFields - API Communication
+Paperless AutoFields - API Commu        response = self.session.get(
+            f'{self.api_url}/api/documents/',
+            params={'page_size': 1})
+        response.raise_for_status()ion
 
 Dieses Modul verwaltet die REST-Kommunikation mit der Paperless-NGX API.
 """
@@ -35,16 +38,18 @@ class PaperlessAPI:
     def _test_connection(self) -> None:
         """Testet die Verbindung zur API."""
         try:
-            response = self.session.get(f'{self.api_url}/api/documents/',
-                                      params={'page_size': 1})
+            response = self.session.get(
+                f'{self.api_url}/api/documents/',
+                params={'page_size': 1})
             response.raise_for_status()
             logger.success("Verbindung zur Paperless-NGX API erfolgreich")
         except requests.exceptions.RequestException as e:
             logger.error(f"Fehler beim Verbinden zur API: {e}")
             raise
     
-    def get_documents_by_type(self, document_type: str,
-                            page_size: int = 100) -> List[Dict[str, Any]]:
+    def get_documents_by_type(
+            self, document_type: str,
+            page_size: int = 100) -> List[Dict[str, Any]]:
         """
         Ruft alle Dokumente eines bestimmten Typs ab.
         
@@ -83,7 +88,7 @@ class PaperlessAPI:
                 break
         
         logger.info(f"Gefunden: {len(documents)} Dokumente vom Typ "
-                   f"'{document_type}'")
+                    f"'{document_type}'")
         return documents
     
     def get_document_content(self, document_id: int) -> Optional[str]:
@@ -107,7 +112,7 @@ class PaperlessAPI:
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Fehler beim Abrufen des Dokumentinhalts "
-                        f"für ID {document_id}: {e}")
+                         f"für ID {document_id}: {e}")
             return None
     
     def get_custom_fields(self) -> List[Dict[str, Any]]:
@@ -148,8 +153,9 @@ class PaperlessAPI:
         logger.warning(f"Custom Field '{field_name}' nicht gefunden")
         return None
     
-    def set_custom_field_value(self, document_id: int, field_name: str,
-                              value: str) -> bool:
+    def set_custom_field_value(
+            self, document_id: int, field_name: str,
+            value: str) -> bool:
         """
         Setzt den Wert eines Custom Fields für ein Dokument.
         Nutzt die neue /api/custom_field_values/ API.
@@ -185,9 +191,9 @@ class PaperlessAPI:
             if instances:
                 # Bestehenden Wert löschen (API unterstützt kein Update)
                 for instance in instances:
-                    delete_response = self.session.delete(
-                        f'{self.api_url}/api/custom_field_values/{instance["id"]}/'
-                    )
+                    delete_url = (f'{self.api_url}/api/custom_field_values/'
+                                  f'{instance["id"]}/')
+                    delete_response = self.session.delete(delete_url)
                     delete_response.raise_for_status()
             
             # Neuen Wert erstellen
@@ -202,7 +208,7 @@ class PaperlessAPI:
             
             response.raise_for_status()
             logger.success(f"Custom Field '{field_name}' für Dokument "
-                          f"{document_id} auf '{value}' gesetzt")
+                           f"{document_id} auf '{value}' gesetzt")
             return True
             
         except requests.exceptions.RequestException as e:
@@ -241,11 +247,12 @@ class PaperlessAPI:
             
         except requests.exceptions.RequestException as e:
             logger.error(f"Fehler beim Abrufen der Custom Fields "
-                        f"für Dokument {document_id}: {e}")
+                         f"für Dokument {document_id}: {e}")
             return {}
     
-    def search_documents(self, query: str, document_type: str = None,
-                        limit: int = 100) -> List[Dict[str, Any]]:
+    def search_documents(
+            self, query: str, document_type: Optional[str] = None,
+            limit: int = 100) -> List[Dict[str, Any]]:
         """
         Durchsucht Dokumente mit Volltext-Suche.
         
@@ -290,9 +297,11 @@ class PaperlessAPI:
             response = self.session.get(f'{self.api_url}/api/')
             response.raise_for_status()
             
+            api_version = response.headers.get('X-Api-Version', 'unknown')
+            server_version = response.headers.get('X-Version', 'unknown')
             return {
-                'api_version': response.headers.get('X-Api-Version', 'unknown'),
-                'server_version': response.headers.get('X-Version', 'unknown'),
+                'api_version': api_version,
+                'server_version': server_version,
                 'status': 'connected'
             }
             

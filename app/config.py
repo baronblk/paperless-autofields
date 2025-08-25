@@ -11,6 +11,7 @@ from typing import Optional
 from dotenv import load_dotenv
 from loguru import logger
 
+
 class Config:
     """Konfigurationsmanagement für Paperless AutoFields."""
     
@@ -105,8 +106,9 @@ class Config:
     def validate_config(self) -> None:
         """Validiert die Konfiguration."""
         try:
-            # Prüfe kritische Konfiguration
-            _ = self.paperless_api_token  # Löst Exception aus wenn nicht vorhanden
+            # Prüfe kritische Konfiguration (löst Exception aus wenn nicht
+            # vorhanden)
+            _ = self.paperless_api_token
             
             # Erstelle Log-Verzeichnis falls nötig
             log_path = Path(self.log_file).parent
@@ -114,7 +116,9 @@ class Config:
             
             # Prüfe Pattern-Datei
             if not Path(self.pattern_file).exists():
-                logger.warning(f"Pattern-Datei {self.pattern_file} nicht gefunden")
+                pattern_msg = (f"Pattern-Datei {self.pattern_file} "
+                               f"nicht gefunden")
+                logger.warning(pattern_msg)
             
             logger.success("Konfiguration erfolgreich validiert")
             

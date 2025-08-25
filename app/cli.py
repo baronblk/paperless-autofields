@@ -7,11 +7,10 @@ CLI-Tool für manuelle Feldinjektionen und Verwaltungsaufgaben.
 import argparse
 import sys
 import json
-from pathlib import Path
 from loguru import logger
-from config import Config
-from api import PaperlessAPI
-from extractor import FieldExtractor
+from .config import Config
+from .api import PaperlessAPI
+from .extractor import FieldExtractor
 
 
 def setup_cli_logging():
@@ -20,7 +19,8 @@ def setup_cli_logging():
     logger.add(
         sys.stdout,
         level="INFO",
-        format="<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {message}",
+        format=("<green>{time:HH:mm:ss}</green> | <level>{level}</level> | "
+                "{message}"),
         colorize=True
     )
 
@@ -30,11 +30,12 @@ def cmd_set_field(args):
     config = Config()
     api = PaperlessAPI(config.paperless_api_url, config.paperless_api_token)
     
-    success = api.set_custom_field_value(args.document_id, args.field, args.value)
+    success = api.set_custom_field_value(
+        args.document_id, args.field, args.value)
     
     if success:
         logger.success(f"Feld '{args.field}' für Dokument {args.document_id} "
-                      f"auf '{args.value}' gesetzt")
+                       f"auf '{args.value}' gesetzt")
         return 0
     else:
         logger.error("Fehler beim Setzen des Feldes")
@@ -84,7 +85,8 @@ def cmd_list_documents(args):
     config = Config()
     api = PaperlessAPI(config.paperless_api_url, config.paperless_api_token)
     
-    documents = api.get_documents_by_type(args.document_type or config.document_type)
+    doc_type = args.document_type or config.document_type
+    documents = api.get_documents_by_type(doc_type)
     
     if args.json:
         print(json.dumps(documents, indent=2, ensure_ascii=False))
@@ -140,7 +142,9 @@ def cmd_process_document(args):
     
     # Dokument-Daten abrufen
     documents = api.get_documents_by_type(config.document_type)
-    document = next((d for d in documents if d['id'] == args.document_id), None)
+    # Dokument suchen
+    document = next((d for d in documents if d['id'] == args.document_id),
+                    None)
     
     if not document:
         logger.error(f"Dokument {args.document_id} nicht gefunden")

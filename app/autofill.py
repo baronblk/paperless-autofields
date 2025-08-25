@@ -8,9 +8,9 @@ import time
 import sys
 from pathlib import Path
 from loguru import logger
-from config import Config
-from api import PaperlessAPI
-from extractor import FieldExtractor
+from .config import Config
+from .api import PaperlessAPI
+from .extractor import FieldExtractor
 
 
 class AutoFieldProcessor:
@@ -81,7 +81,7 @@ class AutoFieldProcessor:
             existing_fields = self.api.get_document_custom_fields(document_id)
             if existing_fields:
                 logger.debug(f"Dokument {document_id} bereits verarbeitet, "
-                           f"überspringe")
+                             f"überspringe")
                 return True
         
         # OCR-Inhalt abrufen
@@ -105,14 +105,14 @@ class AutoFieldProcessor:
             if self.config.validate_extracted_values:
                 if not self.extractor.validate_value(field_name, value):
                     logger.warning(f"Validierung fehlgeschlagen für "
-                                 f"'{field_name}': '{value}'")
+                                   f"'{field_name}': '{value}'")
                     continue
                 
                 # Spezielle IBAN-Validierung
                 if field_name.lower() == 'iban':
                     if not self.extractor.validate_iban(value):
                         logger.warning(f"IBAN-Validierung fehlgeschlagen: "
-                                     f"'{value}'")
+                                       f"'{value}'")
                         continue
             
             # Custom Field setzen
@@ -120,10 +120,10 @@ class AutoFieldProcessor:
                 success_count += 1
             else:
                 logger.error(f"Fehler beim Setzen von '{field_name}' "
-                           f"für Dokument {document_id}")
+                             f"für Dokument {document_id}")
         
         logger.info(f"Dokument {document_id}: {success_count}/"
-                   f"{len(extracted_fields)} Felder erfolgreich gesetzt")
+                    f"{len(extracted_fields)} Felder erfolgreich gesetzt")
         
         return success_count > 0
     
@@ -135,7 +135,7 @@ class AutoFieldProcessor:
             Anzahl erfolgreich verarbeiteter Dokumente
         """
         logger.info(f"Starte Verarbeitung für Dokumenttyp: "
-                   f"'{self.config.document_type}'")
+                    f"'{self.config.document_type}'")
         
         # Dokumente abrufen
         documents = self.api.get_documents_by_type(self.config.document_type)
@@ -152,10 +152,10 @@ class AutoFieldProcessor:
                     processed_count += 1
             except Exception as e:
                 logger.error(f"Fehler bei Verarbeitung von Dokument "
-                           f"{document['id']}: {e}")
+                             f"{document['id']}: {e}")
         
         logger.success(f"Verarbeitung abgeschlossen: {processed_count}/"
-                      f"{len(documents)} Dokumente erfolgreich verarbeitet")
+                       f"{len(documents)} Dokumente erfolgreich verarbeitet")
         
         return processed_count
     
@@ -172,7 +172,7 @@ class AutoFieldProcessor:
             
             duration = time.time() - start_time
             logger.info(f"Verarbeitungslauf abgeschlossen in {duration:.2f}s, "
-                       f"{processed} Dokumente verarbeitet")
+                        f"{processed} Dokumente verarbeitet")
             
         except KeyboardInterrupt:
             logger.info("Verarbeitung durch Benutzer unterbrochen")
@@ -183,14 +183,14 @@ class AutoFieldProcessor:
     def run_continuous(self) -> None:
         """Startet die kontinuierliche Verarbeitung."""
         logger.info(f"Starte kontinuierliche Verarbeitung "
-                   f"(Intervall: {self.config.run_interval}s)")
+                    f"(Intervall: {self.config.run_interval}s)")
         
         try:
             while True:
                 self.run_once()
                 
                 logger.debug(f"Warte {self.config.run_interval} Sekunden "
-                           f"bis zum nächsten Lauf...")
+                             f"bis zum nächsten Lauf...")
                 time.sleep(self.config.run_interval)
                 
         except KeyboardInterrupt:
