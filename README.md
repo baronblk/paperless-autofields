@@ -1,15 +1,23 @@
 # Paperless-NGX AutoFields
 
-Ein professionelles Python-basiertes Sidecar-Modul für Paperless-NGX zur automatischen Extraktion und Verarbeitung von Dokumentfeldern mittels OCR und RegEx.
+**🎯 Automatische Felderkennung für Paperless-NGX**
+
+Ein professionelles Python-basiertes Tool zur automatischen Extraktion von Dokumentfeldern aus OCR-Text mit konfigurierbaren Regex-Patterns.
+
+[![Python](https://img.shields.io/badge/Python-3.9%2B-blue.svg)](https://python.org)
+[![Docker](https://img.shields.io/badge/Docker-Multi--Arch-blue.svg)](https://hub.docker.com)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/baronblk/paperless-autofields)](https://github.com/baronblk/paperless-autofields/releases)
 
 ## 🎯 Features
 
-- **Automatische Felderkennung**: Extraktion von Rechnungsnummer, Zahlungsziel, IBAN und weiteren Feldern
-- **Multi-Platform Docker**: Unterstützung für amd64 und arm64 (Raspberry Pi kompatibel)
-- **Web-GUI**: Flask-basierte Benutzeroberfläche zur Konfiguration und Überwachung
-- **Live-Reload**: Dynamisches Nachladen von Regex-Patterns ohne Container-Neustart
-- **Modular & Erweiterbar**: Saubere Trennung von Logik, API und UI-Komponenten
-- **Umfassendes Logging**: Strukturierte Logs mit Rotation für Debugging und Monitoring
+- **🔍 Automatische Felderkennung**: Extraktion von Rechnungsnummer, Zahlungsziel, IBAN und weiteren Feldern
+- **🐳 Multi-Platform Docker**: Unterstützung für amd64 und arm64 (UGREEN NAS & Raspberry Pi kompatibel)
+- **🌐 Web-GUI**: Flask-basierte Benutzeroberfläche zur Konfiguration und Überwachung
+- **🔄 Live-Reload**: Dynamisches Nachladen von Regex-Patterns ohne Container-Neustart
+- **⚙️ CLI-Interface**: Vollständige Kommandozeilen-Tools für Automatisierung
+- **📊 Umfassendes Logging**: Strukturierte Logs mit Rotation für Debugging und Monitoring
+- **🔧 Modular & Erweiterbar**: Saubere Trennung von Logik, API und UI-Komponenten
 
 ## 🏗️ Architektur
 
@@ -50,16 +58,40 @@ docker-compose up -d
 
 4. Web-GUI öffnen: `http://localhost:5000`
 
-### Manuelle Installation
+### CLI-Interface
 
-1. Python 3.11+ installieren
-2. Dependencies installieren:
+Das Tool bietet ein vollständiges CLI für Automatisierung und Tests:
+
 ```bash
-pip install -r requirements.txt
+# Custom Field manuell setzen
+python -m app.cli set-field 123 rechnungsnummer "RG-2024-001"
+
+# Felder aus Dokument extrahieren
+python -m app.cli extract 123 --json
+
+# Dokumente auflisten
+python -m app.cli list-docs --limit 10
+
+# Pattern testen
+python -m app.cli test-pattern rechnungsnummer --text "Rechnung: RG-123"
+
+# Dokument verarbeiten (Testmodus)
+python -m app.cli process 123 --dry-run
 ```
 
-3. Umgebungsvariablen setzen und starten:
+### Manuelle Installation
+
+1. Python 3.9+ installieren
+2. Setup-Script ausführen:
 ```bash
+python setup.py  # Interaktive Konfiguration
+```
+
+Oder manuell:
+```bash
+pip install -r requirements.txt
+cp .env.example .env
+# .env-Datei bearbeiten
 python app/autofill.py
 ```
 
