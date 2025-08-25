@@ -1,0 +1,89 @@
+version: '3.8'
+
+# Paperless AutoFields für UGREEN NAS
+# Verwendet vorgefertigte Container von ghcr.io
+
+services:
+  # Hauptservice für automatische Verarbeitung
+  paperless-autofields:
+    image: ghcr.io/baronblk/paperless-autofields:latest
+    container_name: paperless-autofields
+    restart: unless-stopped
+    
+    environment:
+      # Paperless-NGX API (ERFORDERLICH)
+      - PAPERLESS_API_URL=${PAPERLESS_API_URL}
+      - PAPERLESS_API_TOKEN=${PAPERLESS_API_TOKEN}
+      
+      # Verarbeitung
+      - DOCUMENT_TYPE=${DOCUMENT_TYPE:-Rechnung}
+      - RUN_INTERVAL=${RUN_INTERVAL:-300}
+      - VALIDATE_EXTRACTED_VALUES=${VALIDATE_EXTRACTED_VALUES:-true}
+      - SKIP_PROCESSED_DOCUMENTS=${SKIP_PROCESSED_DOCUMENTS:-true}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=/app/logs/paperless-autofields.log
+    
+    volumes:
+      # Persistente Logs
+      - ./logs:/app/logs
+      # Custom Patterns (optional)
+      - ./patterns.yaml:/app/patterns.yaml:ro
+    
+    networks:
+      - paperless-net
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import app.config; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Web-Interface (optional)
+  paperless-autofields-web:
+    image: ghcr.io/baronblk/paperless-autofields:web
+    container_name: paperless-autofields-web
+    restart: unless-stopped
+    
+    environment:
+      # API Config (gleich wie Hauptservice)
+      - PAPERLESS_API_URL=${PAPERLESS_API_URL}
+      - PAPERLESS_API_TOKEN=${PAPERLESS_API_TOKEN}
+      - WEB_PORT=${WEB_PORT:-5000}
+      - WEB_HOST=0.0.0.0
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    
+    volumes:
+      - ./logs:/app/logs
+      - ./patterns.yaml:/app/patterns.yaml
+    
+    ports:
+      - "${WEB_PORT:-5000}:5000"
+    
+    networks:
+      - paperless-net
+    
+    # Abhängigkeit: Warte auf Hauptservice
+    depends_on:
+      paperless-autofields:
+        condition: service_healthy
+    
+    # Web Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  paperless-net:
+    driver: bridge
+    
+# Volumes für persistente Daten
+volumes:
+  logs:
+    driver: local

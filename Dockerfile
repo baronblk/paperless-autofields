@@ -1,12 +1,14 @@
 # Multi-stage Dockerfile für Paperless AutoFields
-# Unterstützt AMD64 und ARM64 Architekturen
+# Optimiert für UGREEN NAS - unterstützt AMD64 und ARM64
 
 FROM python:3.11-slim as base
 
-# Labels für bessere Dokumentation
-LABEL maintainer="baronblk"
-LABEL description="Paperless-NGX AutoFields - Automatische Felderkennung"
-LABEL version="1.0.0"
+# Labels für GitHub Container Registry
+LABEL org.opencontainers.image.source="https://github.com/baronblk/paperless-autofields"
+LABEL org.opencontainers.image.description="Paperless-NGX AutoFields - Automatische Felderkennung für Custom Fields"
+LABEL org.opencontainers.image.version="latest"
+LABEL org.opencontainers.image.authors="baronblk"
+LABEL org.opencontainers.image.licenses="MIT"
 
 # Umgebungsvariablen
 ENV PYTHONUNBUFFERED=1

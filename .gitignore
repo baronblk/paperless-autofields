@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.env
+config-backup/
 
 # Python specific
 __pycache__/
