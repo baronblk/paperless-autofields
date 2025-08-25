@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 """
 Paperless AutoFields Setup Script
@@ -6,13 +7,10 @@ Paperless AutoFields Setup Script
 Interaktiver Setup-Assistent für die Installation und Konfiguration.
 """
 
-import os
 import sys
-import json
 import shutil
-import subprocess
-from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
+
 
 def print_banner():
     """Zeigt das Projekt-Banner."""
@@ -26,6 +24,7 @@ def print_banner():
 ╚══════════════════════════════════════════════════════════════╝
     """
     print(banner)
+
 
 def check_requirements():
     """Prüft System-Anforderungen."""
@@ -58,7 +57,9 @@ def check_requirements():
     
     return True
 
-def get_user_input(prompt: str, default: str = "", required: bool = True) -> str:
+
+def get_user_input(prompt: str, default: str = "",
+                   required: bool = True) -> str:
     """Holt Benutzereingabe mit Validierung."""
     while True:
         if default:
@@ -72,6 +73,7 @@ def get_user_input(prompt: str, default: str = "", required: bool = True) -> str
             return user_input
         
         print("❌ Eingabe erforderlich!")
+
 
 def collect_configuration() -> Dict[str, str]:
     """Sammelt Konfigurationsdaten vom Benutzer."""
@@ -91,6 +93,7 @@ def collect_configuration() -> Dict[str, str]:
     
     return config
 
+
 def main():
     """Hauptfunktion des Setup-Scripts."""
     print_banner()
@@ -99,7 +102,11 @@ def main():
         sys.exit(1)
     
     config = collect_configuration()
+    
+    # Zeige Konfigurationszusammenfassung
+    print(f"\n📋 Konfiguration gespeichert ({len(config)} Einstellungen)")
     print("✅ Setup abgeschlossen!")
+
 
 if __name__ == "__main__":
     main()

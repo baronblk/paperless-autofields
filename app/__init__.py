@@ -6,7 +6,7 @@ Befüllung von Custom Fields in Paperless-NGX Dokumenten.
 
 Hauptmodule:
 - config: Konfigurationsmanagement
-- api: Paperless-NGX API Integration 
+- api: Paperless-NGX API Integration
 - extractor: OCR/Regex Feldextraktion
 - autofill: Hauptverarbeitungslogik
 - cli: Kommandozeilen-Interface

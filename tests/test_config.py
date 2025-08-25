@@ -8,12 +8,8 @@ import pytest
 import tempfile
 import os
 from pathlib import Path
-import sys
 
-# Füge app-Verzeichnis zum Python-Path hinzu
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'app'))
-
-from config import Config
+from app.config import Config
 
 
 class TestConfig:
@@ -39,8 +35,8 @@ class TestConfig:
     def test_env_file_loading(self):
         """Test Laden der Konfiguration aus .env-Datei."""
         # Temporäre .env-Datei erstellen
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.env', 
-                                       delete=False, encoding='utf-8') as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.env',
+                                         delete=False, encoding='utf-8') as f:
             f.write("""
 PAPERLESS_API_URL=http://test:8000
 PAPERLESS_API_TOKEN=test_token_from_file
@@ -71,7 +67,8 @@ LOG_LEVEL=DEBUG
         if 'PAPERLESS_API_TOKEN' in os.environ:
             del os.environ['PAPERLESS_API_TOKEN']
         
-        with pytest.raises(ValueError, match="PAPERLESS_API_TOKEN ist erforderlich"):
+        with pytest.raises(ValueError,
+                           match="PAPERLESS_API_TOKEN ist erforderlich"):
             Config()
     
     def test_boolean_conversion(self):
@@ -82,8 +79,8 @@ LOG_LEVEL=DEBUG
         
         config = Config()
         
-        assert config.validate_extracted_values == False
-        assert config.skip_processed_documents == True
+        assert config.validate_extracted_values is False
+        assert config.skip_processed_documents is True
         
         # Cleanup
         del os.environ['PAPERLESS_API_TOKEN']
@@ -118,7 +115,8 @@ LOG_LEVEL=DEBUG
         
         assert isinstance(config_dict, dict)
         assert 'paperless_api_url' in config_dict
-        assert 'paperless_api_token' not in config_dict  # Sollte aus Sicherheitsgründen nicht enthalten sein
+        # Sollte aus Sicherheitsgründen nicht enthalten sein
+        assert 'paperless_api_token' not in config_dict
         assert 'document_type' in config_dict
         
         # Cleanup

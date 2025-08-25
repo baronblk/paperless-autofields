@@ -48,8 +48,10 @@ cd paperless-autofields
 2. Umgebungsvariablen konfigurieren:
 ```bash
 cp .env.example .env
-# .env-Datei bearbeiten
+# .env-Datei bearbeiten und API-Token eintragen
 ```
+
+⚠️ **Sicherheitshinweis**: Die `.env`-Datei enthält sensible API-Tokens und wird automatisch von Git ignoriert. Niemals diese Datei in das Repository committen!
 
 3. Container starten:
 ```bash
